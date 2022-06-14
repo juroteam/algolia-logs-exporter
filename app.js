@@ -26,8 +26,6 @@ const ALGOLIA_API_KEY = process.env.ALGOLIA_API_KEY;
 const ALGOLIA_LOGS_TYPE = process.env.ALGOLIA_LOGS_TYPE;
 const ALGOLIA_LOGS_COUNT = process.env.ALGOLIA_LOGS_COUNT;
 
-const algolia = Algolia(ALGOLIA_APP_ID, ALGOLIA_API_KEY);
-
 let redisConfig;
 if (SENTINELS === undefined) {
     redisConfig = {
@@ -38,7 +36,8 @@ if (SENTINELS === undefined) {
 } else {
     redisConfig = {
         sentinels: SENTINELS.split(';').map((e) => {
-            const entries = e.split(":"); return { host: entries[0], port: entries[1] };
+            const entries = e.split(":");
+            return { host: entries[0], port: entries[1] };
         }),
         name: SENTINEL_REDIS_MASTER,
         db: REDIS_DB,
@@ -46,6 +45,7 @@ if (SENTINELS === undefined) {
 };
 
 const redis = new Redis(redisConfig);
+const algolia = Algolia(ALGOLIA_APP_ID, ALGOLIA_API_KEY);
 
 const processLogs = async () => {
     const { logs } = await algolia.getLogs({
