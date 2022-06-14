@@ -1,0 +1,19 @@
+[sources.redis]
+type = "redis"
+url = "redis://redis:6379/5"
+key = "algolia-logs"
+
+[transforms.algolia_json]
+type = "remap"
+inputs = [ "redis" ]
+source = """
+. = parse_json!(.message)
+.answer = parse_json!(.answer)
+.query_body = parse_json!(.query_body)
+"""
+
+[sinks.stdout]
+type = "console"
+inputs = ["algolia_json"]
+target = "stdout"
+encoding = "json"

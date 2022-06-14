@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "algoliasearch": "^4.13.1",
+    "ioredis": "^5.0.6"
+  }
+}
