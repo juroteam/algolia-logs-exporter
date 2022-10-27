@@ -1,4 +1,4 @@
-FROM node:16.15-alpine3.16 AS base
+FROM node:18.12-alpine AS base
 ENV ROOT=/app
 ENV NODE_PATH=${ROOT}/node_modules
 WORKDIR ${ROOT}

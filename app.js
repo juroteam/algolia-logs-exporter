@@ -1,7 +1,4 @@
-'use strict';
-
 const Redis = require('ioredis');
-const Algolia = require('algoliasearch');
 
 const requiredEnv = [
     'TIMER_INTERVAL',
@@ -25,6 +22,7 @@ const ALGOLIA_APP_ID = process.env.ALGOLIA_APP_ID;
 const ALGOLIA_API_KEY = process.env.ALGOLIA_API_KEY;
 const ALGOLIA_LOGS_TYPE = process.env.ALGOLIA_LOGS_TYPE;
 const ALGOLIA_LOGS_COUNT = process.env.ALGOLIA_LOGS_COUNT;
+const ALGOLIA_API_URL = `https://${ALGOLIA_APP_ID}.algolia.net/1/logs?type=${ALGOLIA_LOGS_TYPE}&lenght=${ALGOLIA_LOGS_COUNT}`;
 
 let redisConfig;
 if (SENTINELS === undefined) {
@@ -45,14 +43,17 @@ if (SENTINELS === undefined) {
 };
 
 const redis = new Redis(redisConfig);
-const algolia = Algolia(ALGOLIA_APP_ID, ALGOLIA_API_KEY);
 
 const processLogs = async () => {
-    const { logs } = await algolia.getLogs({
-        offset: 0,
-        length: ALGOLIA_LOGS_COUNT,
-        type: ALGOLIA_LOGS_TYPE
+    const response = await fetch(ALGOLIA_API_URL, {
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Algolia-API-Key': ALGOLIA_API_KEY,
+            'X-Algolia-Application-Id': ALGOLIA_APP_ID
+
+        }
     });
+    const { logs } = await response.json();
 
     for (const log of logs) {
         const logHash = log.sha1;
