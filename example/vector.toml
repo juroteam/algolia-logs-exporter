@@ -1,19 +1,38 @@
-[sources.redis]
+[sources.redis_algolia]
 type = "redis"
-url = "redis://redis:6379/5"
+url = "redis://redis:6379/0"
 key = "algolia-logs"
+
+[sources.redis_mongo]
+type = "redis"
+url = "redis://redis:6379/0"
+key = "atlas-mongo-logs"
+
+[sources.redis_mongo_audit]
+type = "redis"
+url = "redis://redis:6379/0"
+key = "atlas-audit-logs"
 
 [transforms.algolia_json]
 type = "remap"
-inputs = [ "redis" ]
+inputs = [ "redis_algolia" ]
 source = """
 . = parse_json!(.message)
-.answer = parse_json!(.answer)
-.query_body = parse_json!(.query_body)
+.answer, err = parse_json(.answer)
+if err != null {
+    del(.answer)
+}
+.query_body, err = parse_json(.query_body)
+if err != null {
+     del(.query_body)
+}
+.timestamp = parse_timestamp!(.timestamp, format: "%FT%TZ")
 """
 
-[sinks.stdout]
+[sinks.console]
 type = "console"
-inputs = ["algolia_json"]
+inputs = ["algolia_json", "local_mongo"]
 target = "stdout"
-encoding = "json"
+
+  [sinks.console.encoding]
+  codec = "json"
