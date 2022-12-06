@@ -6,7 +6,7 @@ RUN apk --no-cache upgrade \
     && chown node:node ${ROOT}
 
 FROM base AS build
-COPY package-lock.json package.json app.js ${ROOT}
+COPY package-lock.json package.json app.js config.js ${ROOT}
 RUN npm ci --omit=dev
 
 FROM base AS prod
