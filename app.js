@@ -27,7 +27,13 @@ if (config.SENTINELS === undefined) {
 const redis = new Redis(redisConfig);
 
 const processAlgoliaLogs = async () => {
+    const endDate = Math.floor(Date.now() / 1000);
+    const setKey = `${config.ALGOLIA_REDIS_LOGS_KEY}:processed`;
+    const lastStartKey = `${config.ALGOLIA_REDIS_LOGS_KEY}:laststart`;
+    const lastStartDate = await redis.get(lastStartKey);
+
     const { status, data } = await urllib.request(config.ALGOLIA_API_URL, {
+        timeout: 10000,
         headers: {
             'Content-Type': 'application/json',
             'X-Algolia-API-Key': config.ALGOLIA_API_KEY,
@@ -39,32 +45,42 @@ const processAlgoliaLogs = async () => {
     if (status !== 200) throw new Error('Algolia API request failed');
     const { logs } = JSON.parse(data);
 
+    await redis.zremrangebyscore(setKey, 0, lastStartDate - 1);
+
     for (const log of logs) {
         const logHash = log.sha1;
-        const hllKey = `${config.ALGOLIA_REDIS_LOGS_KEY}-hll`;
+        const setResult = await redis.zadd(setKey, 'NX', endDate, logHash);
 
-        const hllResult = await redis.pfadd(hllKey, logHash);
-        if (hllResult === 0) {
-            console.log(`Log entry ${logHash} has already been processed`);
+        if (setResult === 0) {
+            console.log(`Log algolia entry ${logHash} has already been processed`);
         } else {
             console.log(`Processing algolia log entry ${logHash}`);
             redis.lpush(config.ALGOLIA_REDIS_LOGS_KEY, JSON.stringify(log));
         }
     }
+
+    await redis.set(lastStartKey, endDate);
 };
-
-
-const dnsPromises = dns.promises;
 
 const downloadMongoLogs = async (mongoUrl, logType, logRedisKey) => {
     const hostLogsUrl = `${config.ATLAS_API_URL}/${mongoUrl}/logs/${logType}.gz`;
     const endDate = Math.floor(Date.now() / 1000);
-    const startDate = endDate - config.ATLAS_LOGS_INTERVAL;
+    const setKey = `${logRedisKey}:processed`;
+    const lastStartKey = `${logRedisKey}:laststart`;
+    const lastStartDate = await redis.get(lastStartKey);
+
+    let startDate;
+    if (lastStartDate === null) {
+        startDate = endDate - config.ATLAS_LOGS_INTERVAL;
+    } else {
+        startDate = endDate - (endDate - lastStartDate);
+    }
 
     const { status, res } = await urllib.request(hostLogsUrl, {
         digestAuth: `${config.ATLAS_PUBLIC_KEY}:${config.ATLAS_PRIVATE_KEY}`,
         streaming: true,
         compressed: true,
+        timeout: 10000,
         data: {
             'endDate': `${endDate}`,
             'startDate': `${startDate}`,
@@ -78,24 +94,28 @@ const downloadMongoLogs = async (mongoUrl, logType, logRedisKey) => {
         crlfDelay: Infinity
     });
 
-    for await (const log of logs) {
-        const logHash = crypto.createHash('blake2b512').update(log).digest('hex');
-        const hllKey = `${logRedisKey}-hll`;
+    await redis.zremrangebyscore(setKey, 0, lastStartDate - 1);
 
-        const hllResult = await redis.pfadd(hllKey, logHash);
-        if (hllResult === 0) {
+    for await (const log of logs) {
+        const logHash = crypto.createHash('sha256').update(log).digest('hex');
+
+        const setResult = await redis.zadd(setKey, 'NX', endDate, logHash);
+        if (setResult === 0) {
             console.log(`Log ${logType} entry ${logHash} has already been processed`);
         } else {
             console.log(`Processing ${logType} log entry ${logHash}`);
             redis.lpush(logRedisKey, log);
         }
     }
+
+    await redis.set(lastStartKey, endDate);
 };
 
+const dnsPromises = dns.promises;
 const processMongoLogs = async (mongoCluster, logType, logRedisKey) => {
     const mongoRecords = await dnsPromises.resolveSrv(`_mongodb._tcp.${mongoCluster}`);
     const mongoHosts = mongoRecords.map((record) => record.name);
-    await Promise.all(mongoHosts.map(host => { downloadMongoLogs(host, logType, logRedisKey) }));
+    await Promise.all(mongoHosts.map((host) => { downloadMongoLogs(host, logType, logRedisKey) }));
 };
 
 async function main() {
