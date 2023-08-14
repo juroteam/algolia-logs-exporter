@@ -24,7 +24,7 @@ jobs:
         run: |
           VERSION=${GITHUB_REF#refs/tags/}
           [[ ${VERSION} =~ "refs/heads/" ]] && VERSION="${GITHUB_SHA::7}"
-          echo "::set-output name=version::${VERSION}"
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
       -
         name: Set up QEMU
         uses: docker/setup-qemu-action@v2
