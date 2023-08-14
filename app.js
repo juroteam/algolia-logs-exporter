@@ -6,22 +6,19 @@ const crypto = require('crypto');
 const config = require('./config');
 const readline = require('node:readline');
 
-let redisConfig;
-if (config.SENTINELS === undefined) {
-    redisConfig = {
-        db: config.REDIS_DB,
-        host: config.REDIS_HOST,
-        port: config.REDIS_PORT,
-    }
+const redisConfig = {
+    db: config.REDIS_DB,
+};
+
+if (config.SENTINELS !== undefined) {
+    redisConfig.name = config.SENTINEL_REDIS_PRIMARY;
+    redisConfig.sentinels = config.SENTINELS.split(';').map((entry) => {
+        const [host, port] = entry.split(":");
+        return { host, port };
+    });
 } else {
-    redisConfig = {
-        db: config.REDIS_DB,
-        name: config.SENTINEL_REDIS_PRIMARY,
-        sentinels: config.SENTINELS.split(';').map((e) => {
-            const entries = e.split(":");
-            return { host: entries[0], port: entries[1] };
-        }),
-    }
+    redisConfig.host = config.REDIS_HOST;
+    redisConfig.port = config.REDIS_PORT;
 };
 
 const redis = new Redis(redisConfig);
