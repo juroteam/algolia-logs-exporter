@@ -1,0 +1,10 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": [
+    "This is Renovate configuration. More here https://www.notion.so/juro/Renovate-97410014070b47daa7dfbd11dbdcba5a"
+  ],
+  "extends": [
+    "local>juroteam/juro-nx//libs/configs/src/renovate/config",
+    "local>juroteam/juro-nx//libs/configs/src/renovate/pinnedVersionWarning.json"
+  ]
+}
