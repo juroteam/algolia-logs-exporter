@@ -6,7 +6,8 @@
   "prConcurrentLimit": 0,
   "enabledManagers": [
     "github-actions",
-    "dockerfile"
+    "dockerfile",
+    "docker-compose"
   ],
   "extends": [
     "config:base"
@@ -26,6 +27,15 @@
         "dockerfile"
       ],
       "commitMessagePrefix": "chore(deps)[dockerfile]:",
+      "additionalReviewers": [
+        "team:sre"
+      ]
+    },
+    {
+      "matchManagers": [
+        "docker-compose"
+      ],
+      "commitMessagePrefix": "chore(deps)[docker-compose]:",
       "additionalReviewers": [
         "team:sre"
       ]
