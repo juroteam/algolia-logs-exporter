@@ -1,12 +1,12 @@
 services:
   redis:
-    image: 'bitnami/redis:6.2'
+    image: 'bitnami/redis:7.4'
     environment:
       - ALLOW_EMPTY_PASSWORD=yes
     ports:
       - '6379:6379'
   redis-replica:
-    image: 'bitnami/redis:6.2'
+    image: 'bitnami/redis:7.4'
     environment:
       - REDIS_REPLICATION_MODE=slave
       - REDIS_MASTER_HOST=redis
