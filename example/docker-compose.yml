@@ -22,7 +22,7 @@ services:
       - redis
       - redis-replica
   vector:
-    image: "timberio/vector:0.41.0-alpine"
+    image: "timberio/vector:0.41.1-alpine"
     volumes:
       - "./vector.toml:/etc/vector/vector.toml:ro"
     depends_on:
