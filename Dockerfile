@@ -1,4 +1,4 @@
-FROM node:18-alpine AS base
+FROM node:22-alpine AS base
 ENV ROOT=/app
 ENV NODE_PATH=${ROOT}/node_modules
 WORKDIR ${ROOT}
