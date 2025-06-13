@@ -12,7 +12,7 @@ services:
       - REDIS_MASTER_HOST=redis
       - ALLOW_EMPTY_PASSWORD=yes
   sentinel:
-    image: 'bitnami/redis-sentinel:7.4'
+    image: 'bitnami/redis-sentinel:8.0'
     environment:
       - REDIS_MASTER_HOST=redis
       - REDIS_MASTER_SET=redis
